@@ -17,3 +17,14 @@
 - [ ] 支持 tree-shaking，内置 lodash 优化、babel helpers、代码压缩，节省代码大小
 - [ ] React
 - [ ] Vue3
+
+## CLI
+
+```bash
+# 生成log
+npm run log
+
+# 提交commit
+npm run commit
+
+```

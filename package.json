@@ -4,7 +4,9 @@
   "description": "创建ts库模板",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "log": "conventional-changelog -p angular -i CHANGELOG.md -s && git add CHANGELOG.md",
+    "commit": "git-cz"
   },
   "repository": {
     "type": "git",
@@ -16,5 +18,23 @@
   "bugs": {
     "url": "https://github.com/NARUTOne/ts-lib-template/issues"
   },
-  "homepage": "https://github.com/NARUTOne/ts-lib-template#readme"
+  "homepage": "https://github.com/NARUTOne/ts-lib-template#readme",
+  "config": {
+    "commitizen": {
+      "path": "node_modules/cz-customizable"
+    }
+  },
+  "husky": {
+    "hooks": {
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
+    }
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^9.1.2",
+    "@commitlint/config-conventional": "^9.1.2",
+    "commitizen": "^4.2.1",
+    "conventional-changelog-cli": "^2.1.0",
+    "cz-customizable": "^6.3.0",
+    "husky": "^4.2.5"
+  }
 }
