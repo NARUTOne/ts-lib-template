@@ -13,7 +13,8 @@
     "lint-fix": "eslint src test --fix --ext",
     "lint": "eslint src test --max-warnings 0",
     "test": "jest --bail --coverage",
-    "build": "npm run lint-strict && npm run test && rimraf dist types && gulp"
+    "prebuild": "npm run lint && npm run test",
+    "build": "rimraf dist types && gulp"
   },
   "repository": {
     "type": "git",
@@ -33,8 +34,8 @@
   },
   "husky": {
     "hooks": {
-      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS",
-      "pre-commit": "lint-staged"
+      "pre-commit": "lint-staged",
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
     }
   },
   "lint-staged": {

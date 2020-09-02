@@ -12,6 +12,7 @@
 - Eslint
 - Lint Staged
 - Jest
+- Npm Script Hook
 
 ### Init
 
@@ -46,7 +47,7 @@
 
 由于算法的函数工具库功能非常单一简单，因此采用 TypeScript 官方推荐的 Gulp 工具进行构建即可满足需求。
 
-> 温馨提示：除了以上构建工具，更多可以了解 [esbuild](https://github.com/evanw/esbuild)、[parcel](https://github.com/parcel-bundler/parcel)以及 [backpack](https://github.com/jaredpalmer/backpack) 等构建工具。
+> 温馨提示：构建工具，更多可以了解 [esbuild](https://github.com/evanw/esbuild)、[parcel](https://github.com/parcel-bundler/parcel)以及 [backpack](https://github.com/jaredpalmer/backpack) 等构建工具。当然如果你想要更多了解这些构建工具的差异以及在什么项目环境下应该做如何选型，可以自行搜索前端构建工具的对比或差异，这里推荐一篇个人觉得总结不错的文章 [前端构建：3 类 13 种热门工具的选型参考](https://segmentfault.com/a/1190000017183743)。
 
 #### TypeScript 配置
 
@@ -247,6 +248,37 @@ dist
 
 ### Lint Staged
 
+#### Lint Staged 背景
+
+在 Git Commit Message 中使用了 [commitlint](https://commitlint.js.org/#/) 工具配合 husky 可以防止生成不规范的 Git Commit Message，从而阻止用户进行不规范的 Git 代码提交，其原理就是监听了 Git Hook 的执行脚本（会在特定的 Git 执行命令诸如 `commit`、`push`、`merge` 等触发之前或之后执行相应的脚本钩子）。Git Hook 其实是进行项目约束非常好用的工具，它的作用包括但不限于：
+
+- Git Commit Message 规范强制统一
+- ESLint 规则统一，防止不符合规范的代码提交（当然也可以包括 Prettier 格式规范以及 Style 样式规范等）
+- 代码稳定性提交，提交之前确保测试用例全部通过
+- 发送通知
+- CI 集成（服务端钩子）
+
+Git Hook 的钩子非常多，但是在客户端钩子中个人最常用的钩子主要是以下两个：
+
+- `pre-commit`：Git 中 `pre` 系列的钩子允许终止即将发生的 Git 操作（`post` 系列往往用作通知行为），`pre-commit` 钩子在键入提交信息（运行 `git commit` 或 `git cz`）前运行，主要用于检查当前即将被提交的代码快照，例如提交遗漏、测试用例以及代码等。该钩子如果以非零值退出则 Git 将放弃本次提交。当然你也可以通过配置命令行参数 `git commit --no-verify` 绕过钩子的运行。
+- `commit-msg`：该钩子在用户输入 Commit Message 后被调用，接收存有当前 **Commit Message** 信息的临时文件路径作为唯一参数，因此可以利用该钩子来核对 Commit Meesage 信息（在 Git Commit Message 中使用了该钩子对提交信息进行了是否符合 Angular 规范的校验）。该钩子和 `pre-commit` 类似，一旦以非零值退出则 Git 将放弃本次提交。
+
+除了上述常用的客户端钩子，还有两个常用的服务端钩子（写这个文档的时候顺手学习了一波）：
+
+- `pre-receive`：该钩子会在远程仓库接收 `git push` 推送的代码时执行（注意不是本地仓库），该钩子会比 `pre-commit` 更加有约束力（总会有这样或那样的开发人员不喜欢提交代码时所做的一堆检测，他们可能会选择绕过这些钩子），`pre-receive` 钩子可用于接收代码时的强制规范校验，如果某个开发人员采用了绕过 `pre-commit` 钩子的方式提交了一堆 💩 一样的代码，那么通过设置该钩子可以拒绝代码提交。当然该钩子最常用的操作还是用于检查用于是否有权限推送代码、非快速向前合并等。
+- `post-receive`：该钩子在推送代码成功后执行，适合用于发送邮件通知或者触发 CI 。
+
+> 温馨提示：想了解更多 Git Hook 信息可以查看 [Git Hook 官方文档](https://git-scm.com/book/zh/v2/%E8%87%AA%E5%AE%9A%E4%B9%89-Git-Git-%E9%92%A9%E5%AD%90) 或 [Git 钩子：自定义你的工作流](https://github.com/geeeeeeeeek/git-recipes/wiki/5.4-Git-%E9%92%A9%E5%AD%90%EF%BC%9A%E8%87%AA%E5%AE%9A%E4%B9%89%E4%BD%A0%E7%9A%84%E5%B7%A5%E4%BD%9C%E6%B5%81)。
+
+需要注意初始化 Git 之后默认会在 `.git/hooks` 目录下生成所有 Git 钩子的 Shell 示例脚本，这些脚本是可以被定制化的。但是对于前端开发而言去更改这些示例脚本适配前端项目非常不友好（大多数前端开发同学压根不会设计 Shell 脚本，尽管这个对于制作工具是一件非常高效的事情），因此社区就出现了类似的增强工具，它们对外抛出的是简单的钩子配置（例如 [ghooks](https://github.com/ghooks-org/ghooks) 在 `package.json` 中只需要进行简单的[钩子属性配置](https://github.com/ghooks-org/ghooks#setup)），而在内部则通过替换 Git 钩子示例脚本的形式使得外部配置的钩子可以被执行，例如 `[husky](https://github.com/typicode/husky)`、`ghooks` 以及 `[pre-commit](https://github.com/pre-commit/pre-commit)`等。
+
+> 温馨提示： Git Hook 还可以定制脚本执行的语言环境，例如对于前端而言当然希望使用熟悉的 Node 进行脚本设计，此时可以通过在脚本文件的头部设置 `#! /usr/bin/env node` 将 Node 作为可执行文件的环境解释器，如果你之前看过 [使用 NPM 发布和使用 CLI 工具](https://juejin.im/post/5eb89053e51d454de54db501) 可能会对这个环境解析器相对熟悉，这里也给出一个使用 Node 解释器的示例：[ghooks - hook.template.raw](https://github.com/ghooks-org/ghooks/blob/master/lib/hook.template.raw)，ghooks 的实现非常简单，感兴趣的同学可以仔细阅读一些源码的实现。
+介绍 Git Hook 是为了让大家清晰的认知到使用 Hook 可以在前端的工程化项目中做很多事情（本来应该放在 Git Commit Message 中介绍相对合适，但是鉴于那个小节引用了另外一篇文章，因此将这个信息放在本小节进行科普）。
+
+之前提到使用 Git Hook 可以进行 ESLint 规范约束，因此大家其实应该能够猜到使用 `pre-commit` 钩子（当然需要借助 Git Hook 增强工具，本项目中一律选择 `husky`）配合 ESLint 可以进行提交说明前的项目代码规则校验，但是如果项目越来越大，ESLint 校验的时间可能越来越长，这对于频繁的代码提交者而言可能是一件相对痛苦的事情，因此可以借助 `lint-staged` 工具（听这个工具的名字就能够猜测 lint 的是已经放入 Git Stage 暂存区中的代码，`ed` 在英文中表明已经做过）减少代码的检测量。
+
+#### Lint Staged 配置
+
 使用 [commitlint](https://commitlint.js.org/#/) 工具可以防止生成不规范的 Git Commit Message，从而阻止用户进行 Git 代码提交。但是如果想要防止团队协作时开发者提交不符合 ESLint 规则的代码则可以通过 [lint-staged](https://github.com/okonet/lint-staged) 工具来实现。`lint-staged` 可以在用户提交代码之前（生成 Git Commit Message 信息之前）使用 ESLint 检查 Git 暂存区中的代码信息（`git add` 之后的修改代码），一旦存在 💩 一样不符合校验规则的代码，则可以终止提交行为。需要注意的是 `lint-staged` 不会检查项目的全量代码（全量使用 ESLint 校验对于较大的项目可能会是一个相对耗时的过程），而只会检查添加到 Git 暂存区中的代码。根据官方文档执行以下命令自动生成配置项信息：
 
 ```bash
@@ -271,6 +303,25 @@ npx mrm lint-staged
 此时如果代码有 💩 , 则提交时会提示错误信息且提交会强制失败
 
 ### Jest
+
+#### 测试背景
+
+如果对于测试的概念和框架不是特别清楚，这里推荐一些可查看的文章：
+
+- [JavaScript 程序测试](https://javascript.ruanyifeng.com/tool/testing.html) - 全面的测试基础知识
+- [New to front-end testing? Start from the top of the pyramid!](https://dev.to/noriste/new-to-front-end-testing-start-from-the-top-of-the-pyramid-36kj) - 重点可以了解一下测试金字塔和测试置信度
+- [[译] JavaScript 单元测试框架：Jasmine, Mocha, AVA, Tape 和 Jest 的比较](https://juejin.im/post/5acc721a6fb9a028b77b23c9) - 单元测试框架对比中文版（2018）
+- [JavaScript unit testing frameworks in 2020: A comparison](https://raygun.com/blog/javascript-unit-testing-frameworks/) - 单元测试框架对比英文版（2020）
+除此之外，如果想了解一些额外的测试技巧，这里推荐一些社区的最佳实践：
+- [javascript-testing-best-practices](https://github.com/goldbergyoni/javascript-testing-best-practices/blob/master/readme-zh-CN.md)
+- [ui-testing-best-practices](https://github.com/NoriSte/ui-testing-best-practices)
+由于这里只是一个简单的 Node 环境的工具库包的单元测试，在对比了各个测试框架之后决定采用 Jest 进行单元测试：
+- 内置断言库可实现开箱即用（从 it 到 expect， Jest 将整个工具包放在一个地方）
+- Jest 可以可靠地并行运行测试，并且为了让加速测试进程，Jest 会先运行先前失败的测试
+- 内置覆盖率报告，无需额外进行配置
+- 优秀的报错信息
+
+> 温馨提示：前端测试框架很多，相比简单的 Node 环境测试，e2e 测试会更复杂一些（不管是测试框架的支持以及测试用例的设计）， Karma 测试管理工具配合 Mocha 进行浏览器环境测试， PhantomJS 以及 Nightwatch（使用的都是皮毛），[testcafe](https://github.com/DevExpress/testcafe) 测试框架（复杂的 API 官方文档），除此之外如果还感兴趣，也可以了解一下 [cypress](https://github.com/cypress-io/cypress) 测试框架。
 
 #### Jest 配置
 
@@ -372,6 +423,36 @@ module.exports = {
 执行 `npm run lint` 进行单元测试的格式校验
 
 > 温馨提示：如果你希望 Jest 测试的代码需要一些格式规范，那么可以查看 [eslint-plugin-jest-formatting](https://github.com/dangreenisrael/eslint-plugin-jest-formatting) 插件。
+
+### Npm Script Hook
+
+不知道大家有没有发现，当你查看一个前端开源项目的时候第一时间找的是项目的描述文件 `package.json` 中的 `main`、`bin` 以及 `files` 等字段信息，除此之外如果还想深入了解项目的结构，应该还会查看 `scripts` 脚本字段信息用于了解项目的开发、构建、测试以及安装等流程。npm 的脚本功能非常强大，你可以利用脚本制作项目需要的任何流程工具。本文不会过多介绍 npm 脚本的功能，只是讲解一下其中用到的一个 [钩子](https://www.npmjs.cn/misc/scripts/#description) 功能.
+
+npm 除了指定一些特殊的脚本钩子以外（例如 `prepublish`、`postpublish`、`preinstall`、`postinstall`等），还可以对任意脚本增加 `pre` 和 `post` 钩子，通过自定义钩子将并发执行的脚本进行简化.
+
+```javascript
+"lint": "eslint src test --max-warnings 0",
+"test": "jest --bail --coverage",
+"prebuild": "npm run lint && npm run test",
+"build": "rimraf dist types && gulp",
+"changelog": "rimraf CHANGELOG.md && conventional-changelog -p angular -i CHANGELOG.md -s"
+```
+
+此时如果执行 `npm run build` 命令时事实上类似于执行了以下命令：
+
+```bash
+npm run prebuild && npm run build
+```
+
+> 温馨提示：大家可能会奇怪什么地方需要类似于 `preinstall` 或 `preuninstall` 这样的钩子，举个例子。例如查看 [husky - package.json](https://github.com/typicode/husky/blob/master/package.json)，husky 在安装的时候因为要植入 Git Hook 脚本从而带来了一些副作用（此时当然可以通过 `preinstall` 触发 Git Hook 脚本植入的逻辑）。如果不想使用 husky，那么卸载后需要清除植入的脚本从而不妨碍原有的 Git Hook 功能。 当然如果想要了解更多关于 npm 脚本的信息，可以查看 [npm-scripts](https://www.npmjs.cn/misc/scripts/) 或 [npm scripts 使用指南](http://www.ruanyifeng.com/blog/2016/10/npm_scripts.html?utm_source=tuicool&utm_medium=referral)。
+
+## 总结
+
+希望大家看完这篇文档之后如果想使用其中某些工具能够养成以下一些习惯：
+
+- 通篇阅读工具对应的官方 Github README 文档以及官方站点文档（如果有站点文档），了解该工具设计的核心哲学、核心功能、解决什么核心问题。前端的工具百花齐放，同样的功能可能可以采用多种不同的工具实现，如果想要在项目中使用得当，就得知道这些工具的差异，就需要完整的阅读相应的官方文档，并考虑当前工具是否匹配你的项目环境。切忌大家在用什么你就用什么，需要有自己对于该工具使用的一些思考。比如之前在设计 UI 组件库的时候采用了 [Lerna](https://github.com/lerna/lerna)，但是当时并不明白它带来的一些弊端，一定需要考虑清楚在什么环境下使用它绝对合适！
+- 在完整调研了各个工具的差异之后，就可以开始选择认为合适的工具（不一定是最新的工具）开始实践，在实践的过程中你会对该工具的使用越来越熟悉。此时如果遇到一些问题或者想要实现某些功能，在通篇阅读文档的基础上会变得相对容易。当然如果遇到了一些报错信息无法解决，此时第一个动作应该是去搜索当前工具所对应的 Github Issues（切忌养成一来就搜索 Baidu Or Google 的习惯），如果没有搜索到相应的 Issues 你可以立马提一个新的 Issue，如果工具库的维护者发现重复的 Issue 他会指引你到相应的 Issue，如果这个问题确实是新发现的，那么很好，你给该工具做了一个很好的贡献。当然除此之外，你也可以根据错误的堆栈信息追踪工具的源码，了解源码之后可能你就清晰了错误信息产生的原因以及如何规避它。
+- 在完成以上两步之后，就可以开始开始总结工具的使用技巧了，此时如果你重新阅读工具的官方文档，或许会产生一些新的认知或思考。
 
 ## 文档
 
