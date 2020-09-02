@@ -27,4 +27,7 @@ npm run log
 # 提交commit
 npm run commit
 
+# build
+npm run build
+
 ```
