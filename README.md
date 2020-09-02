@@ -34,6 +34,9 @@ npm run log
 # 提交commit
 npm run commit
 
+# lint code
+npm run lint
+
 # build
 npm run build
 
