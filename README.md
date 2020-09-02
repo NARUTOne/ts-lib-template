@@ -28,14 +28,17 @@
 ## CLI
 
 ```bash
-# 生成log
-npm run log
+# 生成changelog
+npm run changelog
 
 # 提交commit
 npm run commit
 
 # lint code
 npm run lint
+
+# test code
+npm run test
 
 # build
 npm run build

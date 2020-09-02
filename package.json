@@ -8,12 +8,12 @@
     "types"
   ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "log": "rimraf CHANGELOG.md && conventional-changelog -p angular -i CHANGELOG.md -s && git add CHANGELOG.md",
+    "changelog": "rimraf CHANGELOG.md && conventional-changelog -p angular -i CHANGELOG.md -s && git add CHANGELOG.md",
     "commit": "git-cz",
-    "lint": "eslint src --fix --ext",
-    "lint-strict": "eslint src --max-warnings 0",
-    "build": "npm run lint-strict && rimraf dist types && gulp"
+    "lint-fix": "eslint src test --fix --ext",
+    "lint": "eslint src test --max-warnings 0",
+    "test": "jest --bail --coverage",
+    "build": "npm run lint-strict && npm run test && rimraf dist types && gulp"
   },
   "repository": {
     "type": "git",
@@ -38,23 +38,30 @@
     }
   },
   "lint-staged": {
-    "*.ts": "npm run lint-strict"
+    "*.ts": [
+      "npm run lint",
+      "npm run test"
+    ]
   },
   "devDependencies": {
     "@commitlint/cli": "^9.1.2",
     "@commitlint/config-conventional": "^9.1.2",
+    "@types/jest": "^26.0.12",
     "@typescript-eslint/eslint-plugin": "^4.0.1",
     "@typescript-eslint/parser": "^4.0.1",
     "commitizen": "^4.2.1",
     "conventional-changelog-cli": "^2.1.0",
     "cz-customizable": "^6.3.0",
     "eslint": "^7.8.1",
+    "eslint-plugin-jest": "^23.20.0",
     "gulp": "^4.0.2",
     "gulp-typescript": "^6.0.0-alpha.1",
     "husky": "^4.2.5",
+    "jest": "^26.4.2",
     "lint-staged": "^10.2.13",
     "merge2": "^1.4.1",
     "rimraf": "^3.0.2",
+    "ts-jest": "^26.3.0",
     "typescript": "^4.0.2"
   }
 }
