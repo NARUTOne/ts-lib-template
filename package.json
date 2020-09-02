@@ -12,8 +12,9 @@
     "commit": "git-cz",
     "lint-fix": "eslint src test --fix --ext",
     "lint": "eslint src test --max-warnings 0",
+    "prettier": "prettier src test --write",
     "test": "jest --bail --coverage",
-    "prebuild": "npm run lint && npm run test",
+    "prebuild": "npm run lint && npm run prettier && npm run test",
     "build": "rimraf dist types && gulp"
   },
   "repository": {
@@ -41,6 +42,7 @@
   "lint-staged": {
     "*.ts": [
       "npm run lint",
+      "npm run prettier",
       "npm run test"
     ]
   },
@@ -54,6 +56,7 @@
     "conventional-changelog-cli": "^2.1.0",
     "cz-customizable": "^6.3.0",
     "eslint": "^7.8.1",
+    "eslint-config-prettier": "^6.11.0",
     "eslint-plugin-jest": "^23.20.0",
     "gulp": "^4.0.2",
     "gulp-typescript": "^6.0.0-alpha.1",
@@ -61,6 +64,7 @@
     "jest": "^26.4.2",
     "lint-staged": "^10.2.13",
     "merge2": "^1.4.1",
+    "prettier": "^2.1.1",
     "rimraf": "^3.0.2",
     "ts-jest": "^26.3.0",
     "typescript": "^4.0.2"

@@ -10,9 +10,11 @@
 - Git Commit Message
 - TypeScript
 - Eslint
+- Prettier
 - Lint Staged
 - Jest
 - Npm Script Hook
+- Githun Action
 
 ### Init
 
@@ -72,7 +74,7 @@
 }
 ```
 
-> 温馨提示：这里没有新增 `module` 配置信息，因为默认输出 CommonJS 规范，更多关于 TypeScript 配置信息可查看[TypeScript 官方文档 / 编译选项](https://www.tslang.cn/docs/handbook/compiler-options.html)。如果对于 CommonJS 和 ES6 规范的区别不是很清晰，这里有一篇非常好的文档可以供大家阅读：[ES modules: A cartoon deep-dive](https://hacks.mozilla.org/2018/03/es-modules-a-cartoon-deep-dive/)。
+> 温馨提示：这里没有新增 `module` 配置信息，因为默认输出 CommonJS 规范，更多关于 TypeScript 配置信息可查看[TypeScript 官方文档 / 编译选项](https://www.tslang.cn/docs/handbook/compiler-options.html)。如果对于 CommonJS 和 ES6 规范的区别不是很清晰，这里有一篇非常好的文档可以供大家阅读：[ES modules: A cartoon deep-dive](https://hacks.mozilla.org/2018/03/es-modules-a-cartoon-deep-dive/)、[ES6 modules](https://github.com/rollup/rollup/wiki/ES6-modules)、以及 [pkg.module](https://github.com/rollup/rollup/wiki/pkg.module)。
 
 同时在根目录下新建 `gulpfile.js` 文件：
 
@@ -245,6 +247,120 @@ dist
 需要注意在构建时需要进行校验的严格控制，一旦 lint 抛出 warning 或者 error 则立马终止构建（详情可查看 [ESLint 退出代码](https://cn.eslint.org/docs/user-guide/command-line-interface#exit-codes)）。
 
 > 温馨提示：需要注意 Shell 中的 `&&` 和 `&` 是有差异的，`&&` 主要用于顺序执行，如果其中一个脚本失败退出那么整个组合脚本执行失败，`&` 主要用于并发执行，表示两个脚本同时执行。这里构建的命令需要等待 `lint` 命令执行通过才能进行，一旦 `lint` 失败那么构建命令将不再执行。
+
+#### ESLint Pre-Commit Hook
+
+尽管可能配置了 ESLint 的校验脚本 以及 VS Code 插件，但是有些 ESLint 的规则校验是无法通过 Save Auto Fix 的（例如质量规则），因此还需要一层保障能够确保代码提交之前所有的代码能够 ESLint 校验，这个配置将在 Lint Staged 中讲解。
+
+### Prettier
+
+#### Prettier 背景
+
+Prettier 是一个统一代码格式风格的工具，如果你不清楚为什么需要使用 Prettier，可以查看 [Why Prettier?](https://prettier.io/docs/en/why-prettier.html)。很多人可能疑惑，ESLint 已经能够规范我们的代码风格，为什么还需要 Prettier？在 [Prettier vs Linters](https://prettier.io/docs/en/comparison.html) 中详细说明了两者的区别，Linters 有两种类型的规则：
+
+- 格式规则（Formatting rules）：例如 [max-len](https://eslint.org/docs/rules/max-len)、[keyword-spacing](https://eslint.org/docs/rules/keyword-spacing)以及 [no-mixed-spaces-and-tabs](https://eslint.org/docs/rules/no-mixed-spaces-and-tabs) 等
+- 质量规则（Code-quality rules）：例如 [no-unused-vars](https://eslint.org/docs/rules/no-unused-vars)、[no-implicit-globals](https://eslint.org/docs/rules/no-implicit-globals) 以及 [prefer-promise-reject-errors](https://eslint.org/docs/rules/prefer-promise-reject-errors) 等
+
+ESLint 的规则校验同时包含了 **格式规则** 和 **质量规则**，但是需要注意的是大部分情况下只有 **格式规则** 可以通过 `--fix` 或 VS Code 插件的 Sava Auto Fix 功能一键修复，而 **质量规则** 更多的是发现代码的 Bug 防止代码出错，往往需要手动修复。因此 **格式规则** 并不是必须的，而 **质量规则** 则是必须的。Prettier 与 ESLint 的区别在于 Prettier 专注于统一的**格式规则**，从而减轻 ESLint 在**格式规则上**的校验，而对于**质量规则** 则交给专业的 ESLint 进行处理。总结一句话就是：Prettier for formatting and linters for catching bugs!（ESLint 是必须的，Prettier 是可选的！）
+
+需要注意如果 ESLint（TSLint） 和 Prettier 配合使用时**格式规则**有重复且产生了冲突，那么在编辑器中使用 Sava Auto Fix 时会让你的一键格式化哭笑不得。此时应该让两者把各自注重的规则功能区分开，使用 ESLint 校验**质量规则**，而**格式规则**则交给 Prettier 进行处理，更多信息可查看[Integrating with Linters](https://prettier.io/docs/en/integrating-with-linters.html)。
+
+> 温馨提示：在 VS Code 中使用 ESLint 匹配到相应的规则时会产生黄色波浪线提醒以及红色文件名提醒。Prettier 更希望你对格式规则无感知，从而不会让你觉得有任何使用的负担。如果想要了解更多 Prettier，还可以查看 Prettier 的背后思想 [Option Philosophy](https://prettier.io/docs/en/option-philosophy.html)，个人认为了解一个产品设计的**哲学**能更好的指导你使用该产品。
+
+#### Prettier 配置
+
+首先安装 Prettier 所需要的依赖：
+
+```javascript
+npm i  prettier eslint-config-prettier --save-dev
+```
+
+其中：
+
+- `[eslint-config-prettier](https://github.com/prettier/eslint-config-prettier)`: 用于解决 ESLint 和 Prettier 配合使用时容易产生的**格式规则**冲突问题，其作用就是关闭 ESLint 中配置的一些格式规则，除此之外还包括关闭 `@typescript-eslint/eslint-plugin`、`eslint-plugin-babel`、`eslint-plugin-react`、`eslint-plugin-vue`、`eslint-plugin-standard` 等格式规则。
+
+理论上而言，在项目中开启了 ESLint 的 `extends` 中设置了带有格式规则校验的规则集，那么就需要通过 `eslint-config-prettier` 插件关闭可能产生冲突的相对应的格式规则：
+
+```javascript
+{
+  "extends": [
+    "plugin:@typescript-eslint/recommended",
+    // 用于关闭 ESLint 相关的格式规则集，具体可查看 https://github.com/prettier/eslint-config-prettier/blob/master/index.js
+    "prettier",
+    // 用于关闭 @typescript-eslint/eslint-plugin 插件相关的格式规则集，具体可查看 https://github.com/prettier/eslint-config-prettier/blob/master/%40typescript-eslint.js
+    "prettier/@typescript-eslint",
+  ]
+}
+```
+
+配置完成后，可以通过[命令行接口](https://prettier.io/docs/en/cli.html)运行 Prettier:
+
+```javascript
+"scripts": {
+  "prettier": "prettier src test --write",
+},
+```
+
+`--write` 参数类似于 ESLint 中的 `--fix`（在 ESLint 中使用该参数还是需要谨慎哈，建议还是使用 VS Code 的 Save Auto Fix 功能），主要用于自动修复格式错误。此时书写格式的错误代码：
+
+```javascript
+import great from "@/greet";
+// 中间这么多空行
+export default {
+  great,
+};
+```
+
+执行 `npm run prettier` 进行格式修复：
+
+```javascript
+PS C:\Code\Git\algorithms> npm run prettier
+> algorithms-utils@1.0.0 prettier C:\Code\Git\algorithms
+> prettier src test --write
+src\greet.ts 149ms
+src\index.ts 5ms
+test\greet.spec.ts 11ms
+```
+
+修复之后的的文件格式如下：
+
+```javascript
+import great from "@/greet";
+export default {
+  great,
+};
+```
+
+需要注意如果某些规则集没有对应的 `eslint-config-prettier` 关闭配置，那么可以先通过 [CLI helper tool](https://github.com/prettier/eslint-config-prettier#cli-helper-tool) 检测是否有重复的格式规则集在生效，然后可以通过手动配置 `eslintrc.js` 的形式进行关闭（例如本项目中配置的 `plugin:jest/recommended` 可能存在规则冲突）：
+
+```javascript
+PS C:\Code\Git\algorithms> npx eslint --print-config src/index.ts | npx eslint-config-prettier-check
+No rules that are unnecessary or conflict with Prettier were found.
+```
+
+例如把 `eslint-config-prettier` 的配置去除，此时进行检查重复规则：
+
+```javascript
+PS C:\Code\Git\algorithms> npx eslint --print-config src/index.ts | npx eslint-config-prettier-check
+The following rules are unnecessary or might conflict with Prettier:
+- @typescript-eslint/no-extra-semi
+- no-mixed-spaces-and-tabs
+The following rules are enabled but cannot be automatically checked. See:
+https://github.com/prettier/eslint-config-prettier#special-rules
+- no-unexpected-multiline
+```
+
+此时假设 `eslint-config-prettier` 没有类似的关闭格式规则集，那么可以通过配置 `.eslintrc.js` 的形式自己关闭相应冲突的格式规则。
+
+> 温馨提示：ESLint 可以对不同的文件支持不同的规则校验， 因此 `--print-config` 只能对应单个文件的冲突格式规则检查。 由于通常的项目是一套规则对应一整个项目，因此对于整个项目所有的规则只需要校验一个文件是否有格式规则冲突即可。
+
+#### Prettier 插件
+
+通过命令行接口 `--write` 的形式可以进行格式自动修复，但是类似 ESLint，我们更希望项目在实时编辑的时候可以通过保存就自动格式化代码（鬼知道 `--fix` 以及 `--write` 格式了什么文件，当然更希望通过肉眼的形式立即感知格式化），此时可以通过配置 VS Code 的 [Prettier - Code formatter](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) 插件进行 Save Auto Fix，具体的配置查看插件文档。
+
+#### Prettier Pre-Commit Hook
+
+和 ESLint 一样，尽管可能配置了 Prettier 的自动修复格式脚本 以及 VS Code 插件，但是无法确保格式遗漏的情况，因此还需要一层保障能够确保代码提交之前所有的代码能够进行 Prettier 格式化，这个配置将在 Lint Staged 中讲解，更多配置方案也可以查看 [Prettier - Pre-commit Hook](https://prettier.io/docs/en/precommit.html)。
 
 ### Lint Staged
 
@@ -446,6 +562,72 @@ npm run prebuild && npm run build
 
 > 温馨提示：大家可能会奇怪什么地方需要类似于 `preinstall` 或 `preuninstall` 这样的钩子，举个例子。例如查看 [husky - package.json](https://github.com/typicode/husky/blob/master/package.json)，husky 在安装的时候因为要植入 Git Hook 脚本从而带来了一些副作用（此时当然可以通过 `preinstall` 触发 Git Hook 脚本植入的逻辑）。如果不想使用 husky，那么卸载后需要清除植入的脚本从而不妨碍原有的 Git Hook 功能。 当然如果想要了解更多关于 npm 脚本的信息，可以查看 [npm-scripts](https://www.npmjs.cn/misc/scripts/) 或 [npm scripts 使用指南](http://www.ruanyifeng.com/blog/2016/10/npm_scripts.html?utm_source=tuicool&utm_medium=referral)。
 
+### Github Actions
+
+#### CI / CD 背景
+
+个人对于 CI / CD 可能相对不够熟悉（只是简单的玩过 Travis、Gitlab CI / CD 以及 Jenkins ），已经有很多讲解 CI / CD 的好文章，这里就不再过多介绍，有兴趣的同学可以看看以下一些好文：
+
+- [Introduction to CI/CD with GitLab（中文版）](https://s0docs0gitlab0com.icopy.site/ee/ci/introduction/index.html)
+- [GitHub Actions 入门教程](http://www.ruanyifeng.com/blog/2019/09/getting-started-with-github-actions.html)
+- [Github Actions 官方文档](https://docs.github.com/en/actions)
+- [当我有服务器时我做了什么 · 个人服务器运维指南](https://shanyue.tech/op/#%E9%A2%84%E8%A7%88)（这个系列有点佩服啊）
+
+在 [Introduction to CI/CD with GitLab（中文版）](https://s0docs0gitlab0com.icopy.site/ee/ci/introduction/index.html) 中你可以清晰的了解到 CI 和 CD 的职责功能：
+
+![CI&CD.png](https://raw.githubusercontent.com/ziyi2/algorithms/feat/framework/images/CI%26CD.png)
+
+每一个流程的细节，可发现 Gitlab 在每个阶段可用的功能：
+
+![Deep CI&CD.png](https://raw.githubusercontent.com/ziyi2/algorithms/feat/framework/images/Deep%20CI%26CD.png)
+
+由于本项目依赖 Github，因此没法使用 Gitlab 默认集成的能力。之前的 Github 项目采用了 Travis （之前一直在抱怨 Github 没有 CI / CD 能力）进行项目的 CI / CD 集成，现在因为有了更方便的 Github Actions，因此决定采用 Github 自带的 Actions 进行 CI / CD 能力集成（大家如果想更多了解这些 CI / CD 的差异请自行 Google 哈）。Github Actions 所带来的好处在于：
+
+- 可复用的 Actions（以前你需要写复杂的脚本，现在可以复用别人写好的脚本，可以简单理解为 CI 脚本插件化）
+- 支持更多的 [webhook](https://docs.github.com/en/actions/reference/events-that-trigger-workflows)
+
+当然也会产生一些[限制](https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#usage-limits)，这些限制主要都是和执行时间以及次数相关。需要注意类似于 Jenkins 等支持本地连接运行，Github Actions 也支持连接到本地机器运行 workflow，因此部分限制可能不受本地运行的限制。
+
+本项目中使用到的 CI / CD 功能相对简单，如果想了解通用的 Actions，可查看 [官方 Actions](https://github.com/marketplace?type=actions) 和 [awesome-actions](https://github.com/sdras/awesome-actions)。
+
+> 温馨提示：最近在使用 Jenkins 做前端的自动化构建优化，后续可能会出一篇简单的教程文章（当然会跟普通讲解的用法会有所不同喽）。
+#### Github Actions 配置
+
+本项目的 CI 配置可能会包含三个方面：
+
+- 开发并更新静态资源站点流程
+- 发布库包流程
+- 提交 Pull Request 流程
+
+这里主要讲解开发并更新静态资源站点，大致需要分为以下几个步骤（以下都是在 Github 服务器上进行操作，你可以理解为新的容器环境）：
+
+- 拉取当前 Github 仓库并切换到相应的分支（默认 Git 就不需要安装啦）
+- 安装 Node 和 Npm 环境
+- 安装项目的依赖
+- 构建库包和静态资源站点
+- 发布静态资源
+
+通过查看 [官方 Actions](https://github.com/marketplace?type=actions) 和 [awesome-actions](https://github.com/sdras/awesome-actions)，找到所需的 Actions:
+
+- [Checkout](https://github.com/actions/checkout): 从 Github 拉取仓库代码到 Github 服务器的 `$GITHUB_WORKSPACE` 目录下
+- [cache](https://github.com/actions/cache): 缓存 npm
+- [setup-node](https://github.com/actions/setup-node): 安装 Node 和 Npm 环境
+- [actions-gh-pages](https://github.com/peaceiris/actions-gh-pages): 在 Github 上发布静态资源
+
+> 温馨提示：可用的 Action 很多，这里只是设置了一个简单的流程。
+在 `.github/workflows` 下新增 `mian.yml` 配置文件
+
+> 温馨提示：这里不再叙述具体的配置过程，更多可查看配置文件中贴出的链接信息。
+上传 CI 的配置文件后，Github 就会进行自动构建，具体如下：
+
+![workflows.png](https://raw.githubusercontent.com/ziyi2/algorithms/feat/framework/images/Workflows.png)
+
+正在构建或者构建完成后可查看每个构建的信息，如果初次构建失败则可以通过构建信息找出失败原因，并重新修改构建配置进行再次构建，每次构建失败 Github 都会通过邮件的形式进行通知：
+
+![fail.png](https://raw.githubusercontent.com/ziyi2/algorithms/feat/framework/images/Fail.jpg)
+
+如果构建成功，则每次你推送新的代码后，Github 服务会进行一系列流程并自动更新静态资源站点。
+
 ## 总结
 
 希望大家看完这篇文档之后如果想使用其中某些工具能够养成以下一些习惯：
@@ -458,12 +640,18 @@ npm run prebuild && npm run build
 
 - [Npm 官方文档](https://docs.npmjs.com/)
 - [使用 NPM 发布和使用 CLI 工具](https://juejin.im/post/5eb89053e51d454de54db501)
-- [Cz 工具集使用介绍](https://juejin.im/post/5cc4694a6fb9a03238106eb9)（强烈推荐阅读）
-- [TypeScript 中文网](https://www.tslang.cn/)
-- [tsconfig.json 编译选项](https://www.tslang.cn/docs/handbook/compiler-options.html)
-- [gulp-typescript](https://github.com/ivogabe/gulp-typescript)
+- [前端构建：3 类 13 种热门工具的选型参考](https://segmentfault.com/a/1190000017183743)
+- [Cz 工具集使用介绍](https://juejin.im/post/5cc4694a6fb9a03238106eb9)
 - [ES modules: A cartoon deep-dive](https://hacks.mozilla.org/2018/03/es-modules-a-cartoon-deep-dive/)（强烈推荐阅读）
-- [ESLint 中文网](https://cn.eslint.org/)
-- [typescript-eslint](https://github.com/typescript-eslint/typescript-eslint)
-- [Getting Started - Linting your TypeScript Codebase](https://github.com/typescript-eslint/typescript-eslint/blob/master/docs/getting-started/linting/README.md)
-- [Top 10 JavaScript errors from 1000+ projects (and how to avoid them)](https://rollbar.com/blog/top-10-javascript-errors/)
+- [JavaScript 程序测试](https://javascript.ruanyifeng.com/tool/testing.html)
+- [New to front-end testing? Start from the top of the pyramid!](https://dev.to/noriste/new-to-front-end-testing-start-from-the-top-of-the-pyramid-36kj)
+- [JavaScript & Node.js Testing Best Practices](https://github.com/goldbergyoni/javascript-testing-best-practices/blob/master/readme-zh-CN.md)
+- [[译] JavaScript 单元测试框架：Jasmine, Mocha, AVA, Tape 和 Jest 的比较](https://juejin.im/post/5acc721a6fb9a028b77b23c9)
+- [JavaScript unit testing frameworks in 2020: A comparison](https://raygun.com/blog/javascript-unit-testing-frameworks/)
+- [javascript-testing-best-practices](https://github.com/goldbergyoni/javascript-testing-best-practices/blob/master/readme-zh-CN.md)
+- [ui-testing-best-practices](https://github.com/NoriSte/ui-testing-best-practices)
+- [npm scripts 使用指南](http://www.ruanyifeng.com/blog/2016/10/npm_scripts.html?utm_source=tuicool&utm_medium=referral)
+- [技术文章的写作技巧分享](https://juejin.im/post/5ecbdff6e51d45783e17a7a1)
+- [Introduction to CI/CD with GitLab（中文版）](https://s0docs0gitlab0com.icopy.site/ee/ci/introduction/index.html)
+- [GitHub Actions 入门教程](http://www.ruanyifeng.com/blog/2019/09/getting-started-with-github-actions.html)
+- [当我有服务器时我做了什么 · 个人服务器运维指南](https://shanyue.tech/op/#%E9%A2%84%E8%A7%88)
