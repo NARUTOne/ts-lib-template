@@ -11,6 +11,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "log": "rimraf CHANGELOG.md && conventional-changelog -p angular -i CHANGELOG.md -s && git add CHANGELOG.md",
     "commit": "git-cz",
+    "lint": "eslint src --fix --ext",
     "build": "rimraf dist types && gulp"
   },
   "repository": {
@@ -37,9 +38,12 @@
   "devDependencies": {
     "@commitlint/cli": "^9.1.2",
     "@commitlint/config-conventional": "^9.1.2",
+    "@typescript-eslint/eslint-plugin": "^4.0.1",
+    "@typescript-eslint/parser": "^4.0.1",
     "commitizen": "^4.2.1",
     "conventional-changelog-cli": "^2.1.0",
     "cz-customizable": "^6.3.0",
+    "eslint": "^7.8.1",
     "gulp": "^4.0.2",
     "gulp-typescript": "^6.0.0-alpha.1",
     "husky": "^4.2.5",

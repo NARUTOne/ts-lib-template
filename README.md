@@ -2,6 +2,13 @@
 
 > 创建ts库模板，配置一些通用功能
 
+## 社区优秀库
+
+- [tsdx](https://github.com/formium/tsdx)
+- [microbundle](https://github.com/developit/microbundle)
+- [typescript-starter](https://github.com/bitjson/typescript-starter)
+- [ts-lib-scripts](https://github.com/sinoui/ts-lib-scripts)
+
 ## TODO
 
 - [ ] TypeScript
