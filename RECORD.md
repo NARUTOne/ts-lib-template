@@ -144,6 +144,21 @@ gulp.task("default", function () {
 
 > 温馨提示： 对于工具包使用全量引入的方式并不是一个好的选择，可以通过具体的工具方法进行按需引入。
 
+### Rollup
+
+- @rollup/plugin-node-resolve: Rollup插件，使用节点解析算法定位模块，用于在node_modules中使用第三方模块
+- @rollup/plugin-babel: 使用babel
+- @rollup/plugin-commonjs: Rollup插件将CommonJS模块转换为ES6，这样它们就可以包含在Rollup包中
+- @rollup/plugin-typescript: 用于在Rollup和Typescript之间无缝集成
+
+```bash
+# 安装 babel相关
+
+yarn add -D @babel/preset-env
+```
+
+- @microsoft/api-extractor: 是为了把所有的 .d.ts 合成一个，并且，还是可以根据写的注释自动生成文档。
+
 ### Eslint
 
 》 TypeScript 的代码检查工具主要有 TSLint 和 ESLint 两种。早期的 TypeScript 项目一般采用 TSLint 进行检查，TSLint 和 TypeScript 采用同样的 AST 格式进行编译，但主要问题是对于 JavaScript 生态的项目支持不够友好，因此 TypeScript 团队在 2019 年宣布全面转向 ESLint，（具体可查看 TypeScript 官方仓库的 [`.eslintrc.json`](https://github.com/microsoft/TypeScript/blob/master/.eslintrc.jso) 配置）, 更多关于转向 ESLint 的原因可查看：
@@ -591,6 +606,7 @@ npm run prebuild && npm run build
 本项目中使用到的 CI / CD 功能相对简单，如果想了解通用的 Actions，可查看 [官方 Actions](https://github.com/marketplace?type=actions) 和 [awesome-actions](https://github.com/sdras/awesome-actions)。
 
 > 温馨提示：最近在使用 Jenkins 做前端的自动化构建优化，后续可能会出一篇简单的教程文章（当然会跟普通讲解的用法会有所不同喽）。
+
 #### Github Actions 配置
 
 本项目的 CI 配置可能会包含三个方面：
@@ -616,8 +632,8 @@ npm run prebuild && npm run build
 
 > 温馨提示：可用的 Action 很多，这里只是设置了一个简单的流程。
 在 `.github/workflows` 下新增 `mian.yml` 配置文件
+温馨提示：这里不再叙述具体的配置过程，更多可查看配置文件中贴出的链接信息。
 
-> 温馨提示：这里不再叙述具体的配置过程，更多可查看配置文件中贴出的链接信息。
 上传 CI 的配置文件后，Github 就会进行自动构建，具体如下：
 
 ![workflows.png](https://raw.githubusercontent.com/ziyi2/algorithms/feat/framework/images/Workflows.png)

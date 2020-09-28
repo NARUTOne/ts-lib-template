@@ -12,3 +12,5 @@ jest.config.js
 
 # build
 dist 
+
+rollup.config.js
